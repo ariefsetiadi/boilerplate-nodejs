@@ -14,7 +14,7 @@ export const authenticate = (req, res, next) => {
     if (err) {
       return res.status(401).json({
         success: false,
-        message: "Token not valid",
+        message: "Token not valid or expired",
       });
     }
 

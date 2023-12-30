@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import bodyParser from "body-parser";
 
 import { getAll, getById } from "./src/controllers/user.controller.js";
-import { register, login } from "./src/controllers/auth.controller.js";
+import { register, login, logout } from "./src/controllers/auth.controller.js";
 import {
   authenticate,
   isAdmin,
@@ -21,6 +21,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Routes Auth
 app.post("/api/auth/register", register);
 app.post("/api/auth/login", login);
+app.post("/api/auth/logout", authenticate, logout);
 
 // Routes Users
 app.get("/api/user", authenticate, isAdmin, getAll);
