@@ -8,6 +8,7 @@
 - cors
 - dotenv
 - jsonwebtoken
+- moment
 - mysql2
 - sequelize
 - nodemon (for only development)
