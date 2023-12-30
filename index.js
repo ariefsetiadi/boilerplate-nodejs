@@ -4,7 +4,11 @@ import dotenv from "dotenv";
 import bodyParser from "body-parser";
 
 import { getAll, getById } from "./src/controllers/user.controller.js";
-import { register } from "./src/controllers/auth.controller.js";
+import { register, login } from "./src/controllers/auth.controller.js";
+import {
+  authenticate,
+  isAdmin,
+} from "./middlewares/authenticate.middleware.js";
 
 dotenv.config();
 
@@ -16,10 +20,11 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 // Routes Auth
 app.post("/api/auth/register", register);
+app.post("/api/auth/login", login);
 
 // Routes Users
-app.get("/api/user", getAll);
-app.get("/api/user/:id", getById);
+app.get("/api/user", authenticate, isAdmin, getAll);
+app.get("/api/user/:id", authenticate, isAdmin, getById);
 
 app.listen(process.env.PORT, () =>
   console.log(`Server is running at port: ${process.env.PORT}`)

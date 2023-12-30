@@ -31,3 +31,6 @@ DB_PASSWORD="YourDatabasePassword"
 # Config JsonWebToken
 JWT_KEY="YourJWTSecretKey"
 ```
+
+- Run apps use npm start
+- Done

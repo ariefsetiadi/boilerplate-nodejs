@@ -45,3 +45,22 @@ export const registerValidation = (data) => {
 
   return errors;
 };
+
+export const loginValidation = (data) => {
+  const errors = [];
+
+  if (!data.email || data.email.trim() === "") {
+    errors.push("Email is required");
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(data.email)) {
+    errors.push("Email not valid");
+  }
+
+  if (!data.password || data.password.trim() === "") {
+    errors.push("Password is required");
+  }
+
+  return errors;
+};
