@@ -8,7 +8,14 @@ import {
   isAdmin,
 } from "./src/middlewares/authenticate.middleware.js";
 
-import { getAll, getById } from "./src/controllers/user.controller.js";
+import {
+  getAll,
+  createUser,
+  getById,
+  updateUser,
+  deleteUser,
+  resetPassword,
+} from "./src/controllers/user.controller.js";
 import { register, login, logout } from "./src/controllers/auth.controller.js";
 
 import {
@@ -31,11 +38,15 @@ app.post("/api/auth/logout", authenticate, logout);
 
 // Routes Profile
 app.get("/api/auth/myProfile", authenticate, myProfile);
-app.post("/api/auth/changePassword", authenticate, changePassword);
+app.put("/api/auth/changePassword", authenticate, changePassword);
 
 // Routes Users
 app.get("/api/user", authenticate, isAdmin, getAll);
+app.post("/api/user/createUser", authenticate, isAdmin, createUser);
 app.get("/api/user/:id", authenticate, isAdmin, getById);
+app.put("/api/user/updateUser/:id", authenticate, isAdmin, updateUser);
+app.delete("/api/user/deleteUser/:id", authenticate, isAdmin, deleteUser);
+app.put("/api/user/resetPassword/:id", authenticate, isAdmin, resetPassword);
 
 app.listen(process.env.PORT, () =>
   console.log(`Server is running at port: ${process.env.PORT}`)

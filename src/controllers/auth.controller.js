@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+
 import User from "../models/user.model.js";
 import Token from "../models/token.model.js";
 
@@ -58,7 +59,7 @@ export const register = async (req, res) => {
   } catch (error) {
     return res.status(405).json({
       success: false,
-      message: error,
+      message: "Register is failed",
     });
   }
 };
@@ -137,7 +138,7 @@ export const login = async (req, res) => {
   } catch (error) {
     return res.status(405).json({
       success: false,
-      message: error,
+      message: "Login is failed",
     });
   }
 };
@@ -170,7 +171,7 @@ export const logout = async (req, res) => {
   } catch (error) {
     return res.status(405).json({
       success: false,
-      message: error,
+      message: "Logout is failed",
     });
   }
 };

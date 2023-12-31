@@ -1,7 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
-import Token from "../models/token.model.js";
 import moment from "moment";
 
 import { changePasswordValidation } from "../validators/profile.validator.js";
@@ -65,7 +64,7 @@ export const changePassword = async (req, res) => {
 
     const { currentPassword, newPassword, confirmPassword } = req.body;
 
-    // Check Validasi
+    // Check Validation
     const error = changePasswordValidation({
       currentPassword,
       newPassword,
@@ -109,7 +108,7 @@ export const changePassword = async (req, res) => {
   } catch (error) {
     return res.status(405).json({
       success: false,
-      message: error,
+      message: "Change Password is failed",
     });
   }
 };
