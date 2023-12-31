@@ -6,7 +6,7 @@ import Token from "../models/token.model.js";
 import {
   registerValidation,
   loginValidation,
-} from "../validation/register.validation.js";
+} from "../validation/auth.validation.js";
 
 export const register = async (req, res) => {
   try {

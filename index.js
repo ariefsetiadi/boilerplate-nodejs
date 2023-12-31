@@ -3,12 +3,18 @@ import cors from "cors";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 
-import { getAll, getById } from "./src/controllers/user.controller.js";
-import { register, login, logout } from "./src/controllers/auth.controller.js";
 import {
   authenticate,
   isAdmin,
 } from "./middlewares/authenticate.middleware.js";
+
+import { getAll, getById } from "./src/controllers/user.controller.js";
+import { register, login, logout } from "./src/controllers/auth.controller.js";
+
+import {
+  myProfile,
+  changePassword,
+} from "./src/controllers/profile.controller.js";
 
 dotenv.config();
 
@@ -22,6 +28,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.post("/api/auth/register", register);
 app.post("/api/auth/login", login);
 app.post("/api/auth/logout", authenticate, logout);
+
+// Routes Profile
+app.get("/api/auth/myProfile", authenticate, myProfile);
+app.post("/api/auth/changePassword", authenticate, changePassword);
 
 // Routes Users
 app.get("/api/user", authenticate, isAdmin, getAll);
