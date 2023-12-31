@@ -4,7 +4,7 @@ import User from "../models/user.model.js";
 import Token from "../models/token.model.js";
 import moment from "moment";
 
-import { changePasswordValidation } from "../validation/profile.validation.js";
+import { changePasswordValidation } from "../validators/profile.validator.js";
 
 export const myProfile = async (req, res) => {
   try {
@@ -100,7 +100,6 @@ export const changePassword = async (req, res) => {
     // Update Password
     const hashing = await bcrypt.hash(newPassword, 10);
     user.password = hashing;
-    user.updatedAt = new Date();
     await user.save();
 
     return res.status(200).json({

@@ -6,7 +6,7 @@ import bodyParser from "body-parser";
 import {
   authenticate,
   isAdmin,
-} from "./middlewares/authenticate.middleware.js";
+} from "./src/middlewares/authenticate.middleware.js";
 
 import { getAll, getById } from "./src/controllers/user.controller.js";
 import { register, login, logout } from "./src/controllers/auth.controller.js";

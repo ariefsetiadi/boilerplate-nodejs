@@ -15,23 +15,19 @@ const Token = db.define(
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: "user_id",
     },
     accessToken: {
       type: DataTypes.STRING,
       allowNull: false,
-      field: "access_token",
     },
     expiresAt: {
       type: DataTypes.DATE,
       allowNull: false,
-      field: "expires_at",
     },
     createdAt: {
       allowNull: false,
       type: Sequelize.DATE,
       defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
-      field: "created_at",
     },
   },
   {

@@ -19,12 +19,10 @@ const User = db.define(
     placeBirth: {
       type: DataTypes.STRING,
       allowNull: false,
-      field: "place_birth",
     },
     dateBirth: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field: "date_birth",
     },
     gender: {
       type: DataTypes.BOOLEAN,
@@ -46,26 +44,24 @@ const User = db.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    createdAt: {
-      allowNull: false,
-      type: Sequelize.DATE,
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
-      field: "created_at",
-    },
-    updatedAt: {
-      allowNull: false,
-      type: Sequelize.DATE,
-      //   defaultValue: Sequelize.literal(
-      //     "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
-      //   ),
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
-      onUpdate: Sequelize.literal("CURRENT_TIMESTAMP"),
-      field: "updated_at",
-    },
+    // createdAt: {
+    //   allowNull: false,
+    //   type: Sequelize.DATE,
+    //   defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+    //   field: "created_at",
+    // },
+    // updatedAt: {
+    //   allowNull: false,
+    //   type: Sequelize.DATE,
+    //   defaultValue: Sequelize.literal(
+    //     "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+    //   ),
+    //   onUpdate: Sequelize.literal("CURRENT_TIMESTAMP"),
+    //   field: "updated_at",
+    // },
   },
   {
     freezeTableName: true,
-    timestamps: false,
   }
 );
 
