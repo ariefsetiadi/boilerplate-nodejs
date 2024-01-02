@@ -1,16 +1,17 @@
-import { Op } from "sequelize";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+const { Op } = require("sequelize");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const moment = require("moment");
 
-import User from "../models/user.model.js";
+const User = require("../models/user.model");
 
-import {
+const {
   createValidation,
   updateValidation,
   resetPasswordValidation,
-} from "../validators/user.validator.js";
+} = require("../validators/user.validator");
 
-export const getAll = async (req, res) => {
+const getAll = async (req, res) => {
   try {
     const query = await User.findAll();
 
@@ -21,10 +22,24 @@ export const getAll = async (req, res) => {
       });
     }
 
+    const users = [];
+    for (const row of query) {
+      const data = {
+        id: row.id,
+        fullname: row.fullname,
+        placeBirth: row.placeBirth,
+        dateBirth: moment(row.dateBirth).format("DD MMM YYYY"),
+        gender: row.gender === true ? "Male" : "Female",
+        isAdmin: row.isAdmin === true ? "Yes" : "No",
+        email: row.email,
+      };
+      users.push(data);
+    }
+
     return res.status(200).json({
       success: true,
       message: "User is found",
-      data: query,
+      data: users,
     });
   } catch (error) {
     return res.status(405).json({
@@ -34,7 +49,7 @@ export const getAll = async (req, res) => {
   }
 };
 
-export const createUser = async (req, res) => {
+const createUser = async (req, res) => {
   try {
     const {
       fullname,
@@ -45,7 +60,8 @@ export const createUser = async (req, res) => {
       email,
       password,
     } = req.body;
-    const error = createValidation({
+
+    const error = await createValidation({
       fullname,
       placeBirth,
       dateBirth,
@@ -98,7 +114,7 @@ export const createUser = async (req, res) => {
   }
 };
 
-export const getById = async (req, res) => {
+const getById = async (req, res) => {
   try {
     const query = await User.findOne({
       where: {
@@ -113,10 +129,20 @@ export const getById = async (req, res) => {
       });
     }
 
+    const user = {
+      id: query.id,
+      fullname: query.fullname,
+      placeBirth: query.placeBirth,
+      dateBirth: moment(query.dateBirth).format("DD MMM YYYY"),
+      gender: query.gender === true ? "Male" : "Female",
+      isAdmin: query.isAdmin === true ? "Yes" : "No",
+      email: query.email,
+    };
+
     return res.status(200).json({
       success: true,
       message: "User is found",
-      data: query,
+      data: user,
     });
   } catch (error) {
     return res.status(405).json({
@@ -126,7 +152,7 @@ export const getById = async (req, res) => {
   }
 };
 
-export const updateUser = async (req, res) => {
+const updateUser = async (req, res) => {
   try {
     const query = await User.findOne({
       where: {
@@ -144,7 +170,7 @@ export const updateUser = async (req, res) => {
     const { fullname, placeBirth, dateBirth, gender, isAdmin, email } =
       req.body;
 
-    const error = updateValidation({
+    const error = await updateValidation({
       fullname,
       placeBirth,
       dateBirth,
@@ -197,7 +223,7 @@ export const updateUser = async (req, res) => {
   }
 };
 
-export const deleteUser = async (req, res) => {
+const deleteUser = async (req, res) => {
   try {
     const token = req.headers?.authorization?.split(" ")[1];
     const decode = jwt.decode(token);
@@ -239,7 +265,7 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-export const resetPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
   try {
     const user = await User.findOne({
       where: {
@@ -257,7 +283,7 @@ export const resetPassword = async (req, res) => {
     const { password } = req.body;
 
     // Check Validation
-    const error = resetPasswordValidation({
+    const error = await resetPasswordValidation({
       password,
     });
 
@@ -282,4 +308,13 @@ export const resetPassword = async (req, res) => {
       message: "Reset Password is failed",
     });
   }
+};
+
+module.exports = {
+  getAll,
+  createUser,
+  getById,
+  updateUser,
+  deleteUser,
+  resetPassword,
 };
