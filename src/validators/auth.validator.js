@@ -1,17 +1,38 @@
-import moment from "moment";
+const moment = require("moment");
 
-export const registerValidation = (data) => {
+const User = require("../models/user.model");
+
+const registerValidation = async (data) => {
   const errors = [];
 
-  if (!data.fullname || data.fullname.trim() === "") {
+  const users = await User.findAll();
+
+  // Check users is empty or not
+  if (users.length) {
+    errors.push("User is not empty, please add user from menu user");
+  }
+
+  if (
+    data.fullname === null ||
+    data.fullname === "" ||
+    data.fullname.trim() === ""
+  ) {
     errors.push("Fullname is required");
   }
 
-  if (!data.placeBirth || data.placeBirth.trim() === "") {
+  if (
+    data.placeBirth === null ||
+    data.placeBirth === "" ||
+    data.placeBirth.trim() === ""
+  ) {
     errors.push("Place Birth is required");
   }
 
-  if (!data.dateBirth || data.dateBirth.trim() === "") {
+  if (
+    data.dateBirth === null ||
+    data.dateBirth === "" ||
+    data.dateBirth.trim() === ""
+  ) {
     errors.push("Date Birth is required");
   }
 
@@ -26,7 +47,7 @@ export const registerValidation = (data) => {
     errors.push("Gender not valid");
   }
 
-  if (!data.email || data.email.trim() === "") {
+  if (data.email === null || data.email === "" || data.email.trim() === "") {
     errors.push("Email is required");
   }
 
@@ -35,21 +56,25 @@ export const registerValidation = (data) => {
     errors.push("Email not valid");
   }
 
-  if (!data.password || data.password.trim() === "") {
+  if (
+    data.password === null ||
+    data.password === "" ||
+    data.password.trim() === ""
+  ) {
     errors.push("Password is required");
   }
 
-  if (data.password | (data.password.length < 6)) {
+  if (data.password && data.password.length < 6) {
     errors.push("Password min 6 characters");
   }
 
   return errors;
 };
 
-export const loginValidation = (data) => {
+const loginValidation = async (data) => {
   const errors = [];
 
-  if (!data.email || data.email.trim() === "") {
+  if (data.email === null || data.email === "" || data.email.trim() === "") {
     errors.push("Email is required");
   }
 
@@ -58,9 +83,15 @@ export const loginValidation = (data) => {
     errors.push("Email not valid");
   }
 
-  if (!data.password || data.password.trim() === "") {
+  if (
+    data.password === null ||
+    data.password === "" ||
+    data.password.trim() === ""
+  ) {
     errors.push("Password is required");
   }
 
   return errors;
 };
+
+module.exports = { registerValidation, loginValidation };

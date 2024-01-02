@@ -1,31 +1,21 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
-import User from "../models/user.model.js";
-import Token from "../models/token.model.js";
+const User = require("../models/user.model");
+const Token = require("../models/token.model");
 
-import {
+const {
   registerValidation,
   loginValidation,
-} from "../validators/auth.validator.js";
+} = require("../validators/auth.validator");
 
-export const register = async (req, res) => {
+const register = async (req, res) => {
   try {
-    const users = await User.findAll();
-
-    // Check users is empty or not
-    if (users.length) {
-      return res.status(405).json({
-        success: false,
-        message: "User is not empty, please add user from menu user",
-      });
-    }
-
     const { fullname, placeBirth, dateBirth, gender, email, password } =
       req.body;
 
     // Check field validation
-    const error = registerValidation({
+    const error = await registerValidation({
       fullname,
       placeBirth,
       dateBirth,
@@ -64,12 +54,12 @@ export const register = async (req, res) => {
   }
 };
 
-export const login = async (req, res) => {
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     // Check field validation
-    const error = loginValidation({
+    const error = await loginValidation({
       email,
       password,
     });
@@ -81,25 +71,22 @@ export const login = async (req, res) => {
       });
     }
 
-    // Check User
+    // Check User by Email
     const checkUser = await User.findOne({
-      where: {
-        email: email.toLowerCase(),
-      },
+      where: { email: email.toLowerCase() },
     });
-
     if (!checkUser) {
       return res.status(401).json({
-        success: true,
+        success: false,
         message: "Email or Password is invalid",
       });
     }
 
-    // Check Password
+    // Compare Password
     const checkPassword = await bcrypt.compare(password, checkUser.password);
     if (!checkPassword) {
       return res.status(401).json({
-        success: true,
+        success: false,
         message: "Email or Password is invalid",
       });
     }
@@ -143,7 +130,7 @@ export const login = async (req, res) => {
   }
 };
 
-export const logout = async (req, res) => {
+const logout = async (req, res) => {
   try {
     const getToken = await Token.findOne({
       where: {
@@ -175,3 +162,5 @@ export const logout = async (req, res) => {
     });
   }
 };
+
+module.exports = { register, login, logout };

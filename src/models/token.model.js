@@ -1,8 +1,6 @@
-import { Sequelize } from "sequelize";
-import db from "../../config/database.js";
-import User from "./user.model.js";
-
-const { DataTypes } = Sequelize;
+const { Sequelize, DataTypes } = require("sequelize");
+const db = require("../../config/database");
+const User = require("./user.model");
 
 const Token = db.define(
   "tokens",
@@ -38,7 +36,7 @@ const Token = db.define(
 
 Token.belongsTo(User, { foreignKey: "userId" });
 
-export default Token;
+module.exports = Token;
 
 (async () => {
   await db.sync();

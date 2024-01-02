@@ -1,11 +1,12 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
-import moment from "moment";
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const moment = require("moment");
 
-import { changePasswordValidation } from "../validators/profile.validator.js";
+const User = require("../models/user.model");
 
-export const myProfile = async (req, res) => {
+const { changePasswordValidation } = require("../validators/profile.validator");
+
+const myProfile = async (req, res) => {
   try {
     const token = req.headers?.authorization?.split(" ")[1];
     if (!token) {
@@ -45,7 +46,7 @@ export const myProfile = async (req, res) => {
   }
 };
 
-export const changePassword = async (req, res) => {
+const changePassword = async (req, res) => {
   try {
     const token = req.headers?.authorization?.split(" ")[1];
     if (!token) {
@@ -65,7 +66,7 @@ export const changePassword = async (req, res) => {
     const { currentPassword, newPassword, confirmPassword } = req.body;
 
     // Check Validation
-    const error = changePasswordValidation({
+    const error = await changePasswordValidation({
       currentPassword,
       newPassword,
       confirmPassword,
@@ -112,3 +113,5 @@ export const changePassword = async (req, res) => {
     });
   }
 };
+
+module.exports = { myProfile, changePassword };

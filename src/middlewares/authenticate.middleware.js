@@ -1,6 +1,6 @@
-import jwt from "jsonwebtoken";
+const jwt = require("jsonwebtoken");
 
-export const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   const token = req.headers?.authorization?.split(" ")[1];
 
   if (!token) {
@@ -23,7 +23,7 @@ export const authenticate = (req, res, next) => {
   });
 };
 
-export const isAdmin = (req, res, next) => {
+const isAdmin = async (req, res, next) => {
   if (req?.user?.isAdmin === false) {
     return res.status(403).json({
       success: false,
@@ -32,3 +32,5 @@ export const isAdmin = (req, res, next) => {
   }
   next();
 };
+
+module.exports = { authenticate, isAdmin };

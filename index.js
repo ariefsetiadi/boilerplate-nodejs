@@ -1,27 +1,34 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import bodyParser from "body-parser";
+const express = require("express");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const bodyParser = require("body-parser");
 
-import {
+// Middleware
+const {
   authenticate,
   isAdmin,
-} from "./src/middlewares/authenticate.middleware.js";
+} = require("./src/middlewares/authenticate.middleware");
 
-import {
-  getAll,
-  createUser,
-  getById,
-  updateUser,
-  deleteUser,
-  resetPassword,
-} from "./src/controllers/user.controller.js";
-import { register, login, logout } from "./src/controllers/auth.controller.js";
+// Controller
+// const {
+//   getAll,
+//   createUser,
+//   getById,
+//   updateUser,
+//   deleteUser,
+//   resetPassword,
+// } = require("./src/controllers/user.controller");
 
-import {
+const {
+  register,
+  login,
+  logout,
+} = require("./src/controllers/auth.controller");
+
+const {
   myProfile,
   changePassword,
-} from "./src/controllers/profile.controller.js";
+} = require("./src/controllers/profile.controller");
 
 dotenv.config();
 
@@ -41,12 +48,12 @@ app.get("/api/auth/myProfile", authenticate, myProfile);
 app.put("/api/auth/changePassword", authenticate, changePassword);
 
 // Routes Users
-app.get("/api/user", authenticate, isAdmin, getAll);
-app.post("/api/user/createUser", authenticate, isAdmin, createUser);
-app.get("/api/user/:id", authenticate, isAdmin, getById);
-app.put("/api/user/updateUser/:id", authenticate, isAdmin, updateUser);
-app.delete("/api/user/deleteUser/:id", authenticate, isAdmin, deleteUser);
-app.put("/api/user/resetPassword/:id", authenticate, isAdmin, resetPassword);
+// app.get("/api/user", authenticate, isAdmin, getAll);
+// app.post("/api/user/createUser", authenticate, isAdmin, createUser);
+// app.get("/api/user/:id", authenticate, isAdmin, getById);
+// app.put("/api/user/updateUser/:id", authenticate, isAdmin, updateUser);
+// app.delete("/api/user/deleteUser/:id", authenticate, isAdmin, deleteUser);
+// app.put("/api/user/resetPassword/:id", authenticate, isAdmin, resetPassword);
 
 app.listen(process.env.PORT, () =>
   console.log(`Server is running at port: ${process.env.PORT}`)

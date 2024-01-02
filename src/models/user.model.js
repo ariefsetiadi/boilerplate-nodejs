@@ -1,8 +1,6 @@
-import { Sequelize } from "sequelize";
-import bcrypt from "bcrypt";
-import db from "../../config/database.js";
-
-const { DataTypes } = Sequelize;
+const DataTypes = require("sequelize");
+const bcrypt = require("bcrypt");
+const db = require("../../config/database");
 
 const User = db.define(
   "users",
@@ -44,21 +42,6 @@ const User = db.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    // createdAt: {
-    //   allowNull: false,
-    //   type: Sequelize.DATE,
-    //   defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
-    //   field: "created_at",
-    // },
-    // updatedAt: {
-    //   allowNull: false,
-    //   type: Sequelize.DATE,
-    //   defaultValue: Sequelize.literal(
-    //     "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
-    //   ),
-    //   onUpdate: Sequelize.literal("CURRENT_TIMESTAMP"),
-    //   field: "updated_at",
-    // },
   },
   {
     freezeTableName: true,
@@ -70,7 +53,7 @@ User.beforeCreate(async (user, options) => {
   user.password = hashedPassword;
 });
 
-export default User;
+module.exports = User;
 
 (async () => {
   await db.sync();
