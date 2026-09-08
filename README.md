@@ -29,7 +29,7 @@ DB_USER="YourDatabaseUser"
 DB_PASSWORD="YourDatabasePassword"
 
 # Config JsonWebToken
-JWT_KEY="YourJWTSecretKey"
+JWT_SECRET_KEY="YourJWTSecretKey"
 ```
 
 - Run apps use npm start

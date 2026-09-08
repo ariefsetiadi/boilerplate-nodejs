@@ -1,34 +1,12 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require("dotenv");
-const bodyParser = require("body-parser");
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const errorHandler = require('./src/middlewares/errorHandler');
 
-// Middleware
-const {
-  authenticate,
-  isAdmin,
-} = require("./src/middlewares/authenticate.middleware");
-
-// Controller
-const {
-  getAll,
-  createUser,
-  getById,
-  updateUser,
-  deleteUser,
-  resetPassword,
-} = require("./src/controllers/user.controller");
-
-const {
-  register,
-  login,
-  logout,
-} = require("./src/controllers/auth.controller");
-
-const {
-  myProfile,
-  changePassword,
-} = require("./src/controllers/profile.controller");
+const userRoutes = require('./src/modules/user/user.route');
+const authRoutes = require('./src/modules/auth/auth.route');
 
 dotenv.config();
 
@@ -37,24 +15,13 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
 
-// Routes Auth
-app.post("/api/auth/register", register);
-app.post("/api/auth/login", login);
-app.post("/api/auth/logout", authenticate, logout);
-
-// Routes Profile
-app.get("/api/auth/myProfile", authenticate, myProfile);
-app.put("/api/auth/changePassword", authenticate, changePassword);
-
-// Routes Users
-app.get("/api/user", authenticate, isAdmin, getAll);
-app.post("/api/user/createUser", authenticate, isAdmin, createUser);
-app.get("/api/user/:id", authenticate, isAdmin, getById);
-app.put("/api/user/updateUser/:id", authenticate, isAdmin, updateUser);
-app.delete("/api/user/deleteUser/:id", authenticate, isAdmin, deleteUser);
-app.put("/api/user/resetPassword/:id", authenticate, isAdmin, resetPassword);
+app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
 
 app.listen(process.env.PORT, () =>
   console.log(`Server is running at port: ${process.env.PORT}`)
 );
+
+app.use(errorHandler);
