@@ -3,7 +3,7 @@ const User = require('./user.model');
 const { NotFoundError, ConflictError } = require('../../utils/errors');
 const validate = require('../../utils/validate');
 const { userSchema } = require('./user.validator');
-const { capitalizeWords, lowerCase } = require('../../utils/formatText');
+const { capitalizeWords, lowerCase } = require('../../utils/formatData');
 const { getFieldLabel } = require('../../utils/fieldLabels');
 
 const formatUser = (row) => ({

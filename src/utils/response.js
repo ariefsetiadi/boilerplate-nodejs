@@ -24,7 +24,20 @@ const responseError = (res, statusCode = 500, message = 'Something when wrong', 
   return res.status(statusCode).json(payload);
 };
 
+const responseAuth = (res, statusCode = 200, message = 'Unauthorized', accessToken = null, user = null) => {
+  return res.status(statusCode).json({
+    success: true,
+    message,
+    data: {
+      type: 'Bearer',
+      accessToken: accessToken,
+      user,
+    }
+  });
+}
+
 module.exports = {
   responseSuccess,
   responseError,
+  responseAuth,
 };

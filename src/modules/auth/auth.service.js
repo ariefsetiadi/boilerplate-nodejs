@@ -1,17 +1,20 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const moment = require('moment');
+
+const db = require('../../../config/database');
 
 const User = require('../user/user.model');
 const RefreshToken = require('./refreshToken.model');
-const db = require('../../../config/database');
-const validate = require('../../utils/validate');
-const { loginSchema, updateProfileSchema, changePasswordSchema } = require('./auth.validator');
-const { UnauthorizedError, NotFoundError } = require('../../utils/errors');
-const { capitalizeWords, lowerCase } = require('../../utils/formatText');
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+const { loginSchema, updateProfileSchema, changePasswordSchema } = require('./auth.validator');
+
+const validate = require('../../utils/validate');
+const { formatUser } = require('../../utils/formatData');
+const { responseAuth } = require('../../utils/response');
+const { getFieldLabel } = require('../../utils/fieldLabels');
+const { capitalizeWords, lowerCase } = require('../../utils/formatData');
+const { UnauthorizedError, NotFoundError, ValidationError } = require('../../utils/errors');
 
 const hashToken = (rawToken) =>
   crypto.createHash('sha256').update(rawToken).digest('hex');
@@ -46,19 +49,8 @@ const extractDeviceInfo = (req) => ({
   ipAddress: req.ip || null,
 });
 
-const formatUser = (user) => ({
-  id: user.id,
-  fullName: user.fullName,
-  placeBirth: user.placeBirth,
-  dateBirth: user.dateBirth ? moment(user.dateBirth).format('DD MMM YYYY') : null,
-  gender: user.gender === true || user.gender === '1' ? 'Male' : 'Female',
-  email: user.email,
-  status: user.status === true || user.status === '1' ? 'Active' : 'Inactive',
-});
-
 const login = async (payload, req, res) => {
   const data = await validate(loginSchema, payload);
-
   const user = await User.findOne({ where: { email: lowerCase(data.email) } });
 
   if (!user || !(await bcrypt.compare(data.password, user.password))) {
@@ -69,26 +61,30 @@ const login = async (payload, req, res) => {
     throw new UnauthorizedError('Your account is inactive');
   }
 
-  const rawAccessToken = generateAccessToken(user.id);
-  const rawRefreshToken = generateRefreshToken(user.id);
-  const hashedRefreshToken = hashToken(rawRefreshToken);
-  const deviceInfo = extractDeviceInfo(req);
+  try {
+    const rawAccessToken = generateAccessToken(user.id);
+    const rawRefreshToken = generateRefreshToken(user.id);
+    const hashedRefreshToken = hashToken(rawRefreshToken);
+    const deviceInfo = extractDeviceInfo(req);
 
-  await RefreshToken.create({
-    userId: user.id,
-    token: hashedRefreshToken,
-    expiredAt: getRefreshTokenExpiry(),
-    ...deviceInfo,
-  });
+    await RefreshToken.create({
+      userId: user.id,
+      token: hashedRefreshToken,
+      expiredAt: getRefreshTokenExpiry(),
+      ...deviceInfo,
+    });
 
-  const maxAge = parseInt(process.env.AUTH_COOKIE_MAX_AGE, 10);
+    const maxAge = parseInt(process.env.AUTH_COOKIE_MAX_AGE, 10);
 
-  res.cookie('refreshToken', rawRefreshToken, {
-    ...getCookieOptions(maxAge),
-    path: '/api/auth',
-  });
+    res.cookie('refreshToken', rawRefreshToken, {
+      ...getCookieOptions(maxAge),
+      path: '/api/auth',
+    });
 
-  return { accessToken: rawAccessToken, user: formatUser(user) };
+    return responseAuth(res, 200, 'Login is successfully', rawAccessToken, formatUser(user));
+  } catch (error) {
+    throw error;
+  }
 };
 
 const refresh = async (req, res) => {
@@ -231,7 +227,7 @@ const changePassword = async (userId, payload, res) => {
   if (!isCurrentPasswordValid) throw new UnauthorizedError('Current password is incorrect');
 
   const isSamePassword = await bcrypt.compare(data.newPassword, user.password);
-  if (isSamePassword) throw new UnauthorizedError('New password must be different from current password');
+  if (isSamePassword) throw new ValidationError('New password must be different from current password');
 
   const hashedPassword = await bcrypt.hash(data.newPassword, 10);
   user.password = hashedPassword;

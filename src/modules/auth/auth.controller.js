@@ -9,9 +9,9 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const refresh = asyncHandler(async (req, res) => {
-  await authService.refresh(req, res);
+  const newToken = await authService.refresh(req, res);
 
-  return responseSuccess(res, 200, 'Token refreshed successfully');
+  return responseSuccess(res, 200, newToken.message, newToken);
 });
 
 const logout = asyncHandler(async (req, res) => {
