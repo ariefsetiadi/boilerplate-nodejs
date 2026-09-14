@@ -1,21 +1,30 @@
 const authService = require('./auth.service');
-const { responseSuccess } = require('../../utils/response');
+const { responseSuccess, responseAuth } = require('../../utils/response');
+const { getCookieOptions, clearAuthCookies } = require('../../utils/cookie');
 const asyncHandler = require('../../utils/asyncHandler');
 
 const login = asyncHandler(async (req, res) => {
-  const user = await authService.login(req.body, req, res);
+  const { accessToken, refreshToken, user } = await authService.login(req.body, req);
 
-  return responseSuccess(res, 200, 'Login successful', user);
+  const maxAge = parseInt(process.env.AUTH_COOKIE_MAX_AGE, 10);
+  res.cookie('refreshToken', refreshToken, { ...getCookieOptions(maxAge), path: '/api/auth' });
+
+  return responseAuth(res, 200, 'Login successfully', accessToken, user);
 });
 
 const refresh = asyncHandler(async (req, res) => {
-  const newToken = await authService.refresh(req, res);
+  const { accessToken, refreshToken, user } = await authService.refresh(req);
 
-  return responseSuccess(res, 200, newToken.message, newToken);
+  const maxAge = parseInt(process.env.AUTH_COOKIE_MAX_AGE, 10);
+  res.cookie('refreshToken', refreshToken, { ...getCookieOptions(maxAge), path: '/api/auth' });
+
+  return responseAuth(res, 200, 'Token refreshed successfully', accessToken, user);
 });
 
 const logout = asyncHandler(async (req, res) => {
-  await authService.logout(req, res);
+  await authService.logout(req);
+
+  clearAuthCookies(res);
 
   return responseSuccess(res, 200, 'Logout successfully');
 });
@@ -33,7 +42,9 @@ const updateProfile = asyncHandler(async (req, res) => {
 });
 
 const changePassword = asyncHandler(async (req, res) => {
-  await authService.changePassword(req.user.id, req.body, res);
+  await authService.changePassword(req.user.id, req.body);
+
+  clearAuthCookies(res);
 
   return responseSuccess(res, 200, 'Password changed successfully. Please login again');
 });

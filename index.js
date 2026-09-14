@@ -27,8 +27,9 @@ app.use(
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 
+app.use(errorHandler);
+
 app.listen(process.env.PORT, () =>
   console.log(`Server is running at port: ${process.env.PORT}`)
 );
 
-app.use(errorHandler);

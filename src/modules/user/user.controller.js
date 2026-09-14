@@ -1,12 +1,11 @@
 const userService = require('./user.service');
-const { responseSuccess } = require('../../utils/response');
+const { responseSuccess, responsePage } = require('../../utils/response');
 const asyncHandler = require('../../utils/asyncHandler');
 
 const list = asyncHandler(async (req, res) => {
-  const { sort, order } = req.query;
-  const users = await userService.getAllUsers(sort, order);
+  const { data, pagination } = await userService.getAllUsers(req.query);
 
-  return responseSuccess(res, 200, 'Get users is success', users);
+  return responsePage(res, 200, 'Get users successfully', data, pagination);
 });
 
 const detail = asyncHandler(async (req, res) => {
@@ -25,7 +24,7 @@ const update = asyncHandler(async (req, res) => {
   const user = await userService.updateUser(req.params.id, req.body);
 
   return responseSuccess(res, 200, 'User updated successfully', user);
-})
+});
 
 module.exports = {
   list,

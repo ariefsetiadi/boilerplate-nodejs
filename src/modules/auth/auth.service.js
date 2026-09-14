@@ -1,4 +1,3 @@
-const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -10,48 +9,18 @@ const RefreshToken = require('./refreshToken.model');
 const { loginSchema, updateProfileSchema, changePasswordSchema } = require('./auth.validator');
 
 const validate = require('../../utils/validate');
-const { formatUser } = require('../../utils/formatData');
-const { responseAuth } = require('../../utils/response');
 const { getFieldLabel } = require('../../utils/fieldLabels');
 const { capitalizeWords, lowerCase } = require('../../utils/formatData');
-const { UnauthorizedError, NotFoundError, ValidationError } = require('../../utils/errors');
+const { UnauthorizedError, NotFoundError, ValidationError, ConflictError } = require('../../utils/errors');
+const { hashToken, generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } = require('../../utils/token');
+const { extractDeviceInfo } = require('../../utils/device');
 
-const hashToken = (rawToken) =>
-  crypto.createHash('sha256').update(rawToken).digest('hex');
-
-const generateAccessToken = (userId) =>
-  jwt.sign({ sub: userId }, process.env.JWT_SECRET_KEY, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  });
-
-const generateRefreshToken = (userId) =>
-  jwt.sign({ sub: userId }, process.env.JWT_REFRESH_SECRET_KEY, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
-  });
-
-const getRefreshTokenExpiry = () => {
-  const decoded = jwt.decode(generateRefreshToken(0));
-  return new Date(decoded.exp * 1000);
-};
-
-const getCookieOptions = (maxAge) => ({
-  httpOnly: true,
-  secure: process.env.AUTH_COOKIE_SECURE === 'true',
-  sameSite: process.env.AUTH_COOKIE_SAME_SITE || 'lax',
-  maxAge: maxAge !== undefined ? maxAge : parseInt(process.env.AUTH_COOKIE_MAX_AGE, 10),
-});
-
-const extractDeviceInfo = (req) => ({
-  deviceId: req.headers['x-device-id'] || null,
-  deviceName: req.headers['x-device-name'] || null,
-  deviceType: req.headers['x-device-type'] || null,
-  userAgent: req.headers['user-agent'] || null,
-  ipAddress: req.ip || null,
-});
-
-const login = async (payload, req, res) => {
+const login = async (payload, req) => {
   const data = await validate(loginSchema, payload);
-  const user = await User.findOne({ where: { email: lowerCase(data.email) } });
+  const user = await User.findOne({
+    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status', 'password'],
+    where: { email: lowerCase(data.email) },
+  });
 
   if (!user || !(await bcrypt.compare(data.password, user.password))) {
     throw new UnauthorizedError('Invalid email or password');
@@ -74,20 +43,15 @@ const login = async (payload, req, res) => {
       ...deviceInfo,
     });
 
-    const maxAge = parseInt(process.env.AUTH_COOKIE_MAX_AGE, 10);
+    const { password: _, ...safeUser } = user.get({ plain: true });
 
-    res.cookie('refreshToken', rawRefreshToken, {
-      ...getCookieOptions(maxAge),
-      path: '/api/auth',
-    });
-
-    return responseAuth(res, 200, 'Login is successfully', rawAccessToken, formatUser(user));
+    return { accessToken: rawAccessToken, refreshToken: rawRefreshToken, user: safeUser };
   } catch (error) {
     throw error;
   }
 };
 
-const refresh = async (req, res) => {
+const refresh = async (req) => {
   const rawRefreshToken = req.cookies.refreshToken;
 
   if (!rawRefreshToken) throw new UnauthorizedError('Refresh token not found');
@@ -117,7 +81,6 @@ const refresh = async (req, res) => {
       }
     );
 
-    clearAuthCookies(res);
     throw new UnauthorizedError('Token reuse detected. All sessions have been revoked');
   }
 
@@ -127,7 +90,10 @@ const refresh = async (req, res) => {
     throw new UnauthorizedError('Refresh token has expired');
   }
 
-  const user = await User.findByPk(tokenRecord.userId);
+  const user = await User.findByPk(tokenRecord.userId, {
+    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status'],
+  });
+
   if (!user || !user.status) throw new UnauthorizedError('User is not valid');
 
   // Rotation: buat token baru dalam transaction
@@ -153,21 +119,14 @@ const refresh = async (req, res) => {
 
     await t.commit();
 
-    const maxAge = parseInt(process.env.AUTH_COOKIE_MAX_AGE, 10);
-
-    res.cookie('refreshToken', newRawRefreshToken, {
-      ...getCookieOptions(maxAge),
-      path: '/api/auth',
-    });
-
-    return { accessToken: newRawAccessToken, message: 'Token refreshed successfully' };
+    return { accessToken: newRawAccessToken, refreshToken: newRawRefreshToken, user };
   } catch (error) {
     await t.rollback();
     throw error;
   }
 };
 
-const logout = async (req, res) => {
+const logout = async (req) => {
   const rawRefreshToken = req.cookies.refreshToken;
 
   if (rawRefreshToken) {
@@ -181,19 +140,23 @@ const logout = async (req, res) => {
       });
     }
   }
-
-  clearAuthCookies(res);
 };
 
 const getProfile = async (userId) => {
-  const user = await User.findByPk(userId);
+  const user = await User.findByPk(userId, {
+    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status'],
+  });
+
   if (!user) throw new NotFoundError('User not found');
 
-  return formatUser(user);
+  return user;
 };
 
 const updateProfile = async (userId, payload) => {
-  const user = await User.findByPk(userId);
+  const user = await User.findByPk(userId, {
+    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status'],
+  });
+
   if (!user) throw new NotFoundError('User not found');
 
   const validateData = await validate(updateProfileSchema, payload);
@@ -205,7 +168,7 @@ const updateProfile = async (userId, payload) => {
     user.gender = validateData.gender;
     await user.save();
 
-    return formatUser(user);
+    return user;
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
       const field = error.errors[0]?.path;
@@ -217,7 +180,7 @@ const updateProfile = async (userId, payload) => {
   }
 };
 
-const changePassword = async (userId, payload, res) => {
+const changePassword = async (userId, payload) => {
   const user = await User.findByPk(userId);
   if (!user) throw new NotFoundError('User not found');
 
@@ -238,12 +201,6 @@ const changePassword = async (userId, payload, res) => {
     { revokedAt: new Date(), revokedReason: 'security' },
     { where: { userId, revokedAt: null } }
   );
-
-  clearAuthCookies(res);
-};
-
-const clearAuthCookies = (res) => {
-  res.clearCookie('refreshToken', { path: '/api/auth' });
 };
 
 module.exports = {

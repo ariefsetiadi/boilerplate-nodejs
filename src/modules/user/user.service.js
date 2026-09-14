@@ -1,40 +1,60 @@
-const moment = require('moment');
 const User = require('./user.model');
 const { NotFoundError, ConflictError } = require('../../utils/errors');
 const validate = require('../../utils/validate');
 const { userSchema } = require('./user.validator');
 const { capitalizeWords, lowerCase } = require('../../utils/formatData');
 const { getFieldLabel } = require('../../utils/fieldLabels');
-
-const formatUser = (row) => ({
-  id: row.id,
-  fullName: row.fullName,
-  placeBirth: row.placeBirth,
-  dateBirth: row.dateBirth ? moment(row.dateBirth).format('DD MMM YYYY') : null,
-  gender: row.gender === true || row.gender === '1' ? 'Male' : 'Female',
-  email: row.email,
-  status: row.status === true || row.status === '1' ? 'Active' : 'Inactive',
-});
+const { getPagination, buildPaginationMeta } = require('../../utils/pagination');
+const { Op } = require('sequelize');
 
 const ALLOWED_SORT_FIELDS = ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status'];
 
-const getAllUsers = async (sort = 'id', order = 'DESC') => {
+const getAllUsers = async (query) => {
+  const { page, limit, offset } = getPagination(query.page, query.limit);
+  const { search, defaultPassword, status, sort, order = 'DESC' } = query;
+
   const sortBy = ALLOWED_SORT_FIELDS.includes(sort) ? sort : 'id';
   const orderBy = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-  const users = await User.findAll({
+  const where = {};
+
+  if (search) {
+    where[Op.or] = [
+      { fullName: { [Op.like]: `%${search}%` } },
+      { placeBirth: { [Op.like]: `%${search}%` } },
+      { email: { [Op.like]: `%${search}%` } },
+    ];
+  }
+
+  if (defaultPassword) {
+    where.defaultPassword = defaultPassword;
+  }
+
+  if (status) {
+    where.status = status;
+  }
+
+  const { count: total, rows: data } = await User.findAndCountAll({
+    where,
+    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status'],
     order: [[sortBy, orderBy]],
+    limit,
+    offset,
   });
 
-  return users.map(formatUser);
+  const pagination = buildPaginationMeta(total, page, limit);
+
+  return { data, pagination };
 };
 
 const getUserById = async (id) => {
-  const row = await User.findByPk(id);
+  const user = await User.findByPk(id, {
+    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status'],
+  });
 
-  if (!row) throw new NotFoundError('User not found');
+  if (!user) throw new NotFoundError('User not found');
 
-  return formatUser(row);
+  return user;
 };
 
 const createUser = async (payload) => {
@@ -52,7 +72,15 @@ const createUser = async (payload) => {
     });
     await user.save();
 
-    return formatUser(user);
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      placeBirth: user.placeBirth,
+      dateBirth: user.dateBirth,
+      gender: user.gender,
+      email: user.email,
+      status: user.status,
+    }
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
       const field = error.errors[0]?.path;
@@ -65,7 +93,10 @@ const createUser = async (payload) => {
 }
 
 const updateUser = async (id, payload) => {
-  const user = await User.findByPk(id);
+  const user = await User.findByPk(id, {
+    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status'],
+  });
+
   if (!user) throw new NotFoundError('User not found');
 
   const validateData = await validate(userSchema('update'), payload);
@@ -79,7 +110,7 @@ const updateUser = async (id, payload) => {
     user.status = validateData.status;
     await user.save();
 
-    return formatUser(user);
+    return user;
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
       const field = error.errors[0]?.path;

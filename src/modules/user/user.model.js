@@ -1,4 +1,4 @@
-const DataTypes = require('sequelize');
+const { DataTypes } = require('sequelize');
 const db = require('../../../config/database');
 const bcrypt = require('bcryptjs');
 
@@ -32,7 +32,6 @@ const User = db.define('users', {
   email: {
     type: DataTypes.STRING(100),
     allowNull: false,
-    isEmail: true,
     unique: true,
   },
   password: {
