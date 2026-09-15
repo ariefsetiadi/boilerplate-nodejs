@@ -1,28 +1,168 @@
 openapi: 3.0.3
 
 info:
-  title: My API
+  title: Boilerplate Node JS
   version: 1.0.0
   description: REST API built with Node.js and Express
 
 servers:
-  - url: http://localhost:5000/api
-    description: Local development server
+  - url: '{baseUrl}'
+    description: Base URL
+    variables:
+      baseUrl:
+        default: http://localhost:5000
 
 tags:
-  - name: Health
-    description: Health check endpoints
+  - name: User
+    description: User management endpoints
+  - name: Auth
+    description: Authentication endpoints
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserObject:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        fullName:
+          type: string
+          example: Super Administrator
+        placeBirth:
+          type: string
+          example: Jakarta
+        dateBirth:
+          type: string
+          example: '1991-01-01'
+        gender:
+          type: boolean
+          example: true
+        email:
+          type: string
+          example: superadmin@email.com
+        status:
+          type: boolean
+          example: true
+
+    ValidationError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Validation failed
+        error:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    UnauthorizedError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Invalid or expired access token
+
+    NotFoundError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+
+    ConflictError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Email already exists
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 3
+        totalPage:
+          type: integer
+          example: 1
 
 paths:
-  /health:
+  /api/users:
     get:
       tags:
-        - Health
-      summary: Health check
-      description: Check whether the API is running
+        - User
+      summary: List users
+      description: Get a paginated list of users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            example: 10
+        - name: search
+          in: query
+          schema:
+            type: string
+            example: ''
+        - name: status
+          in: query
+          schema:
+            type: string
+            example: ''
+        - name: defaultPassword
+          in: query
+          schema:
+            type: string
+            example: ''
+        - name: sort
+          in: query
+          schema:
+            type: string
+            example: id
+        - name: order
+          in: query
+          schema:
+            type: string
+            example: DESC
       responses:
         '200':
-          description: API is running
+          description: OK
           content:
             application/json:
               schema:
@@ -33,4 +173,786 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: API is running
+                    example: Get users successfully
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserObject'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+              example:
+                success: true
+                message: Get users successfully
+                data:
+                  - id: 3
+                    fullName: General User
+                    placeBirth: Bekasi
+                    dateBirth: '1993-03-03'
+                    gender: true
+                    email: user@email.com
+                    status: true
+                  - id: 2
+                    fullName: Administrator
+                    placeBirth: Batam
+                    dateBirth: '1992-02-02'
+                    gender: false
+                    email: admin@email.com
+                    status: true
+                  - id: 1
+                    fullName: Super Administrator
+                    placeBirth: Jakarta
+                    dateBirth: '1991-01-01'
+                    gender: true
+                    email: superadmin@email.com
+                    status: true
+                pagination:
+                  page: 1
+                  limit: 10
+                  total: 3
+                  totalPage: 1
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+              example:
+                success: false
+                message: Invalid or expired access token
+
+  /api/users/{id}:
+    get:
+      tags:
+        - User
+      summary: Get user detail
+      description: Get detail of a user by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User is found
+                  data:
+                    $ref: '#/components/schemas/UserObject'
+              example:
+                success: true
+                message: User is found
+                data:
+                  id: 2
+                  fullName: Administrator
+                  placeBirth: Batam
+                  dateBirth: '1992-02-02'
+                  gender: false
+                  email: admin@email.com
+                  status: true
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+              example:
+                success: false
+                message: Invalid or expired access token
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+              example:
+                success: false
+                message: User not found
+
+  /api/users/create:
+    post:
+      tags:
+        - User
+      summary: Create user
+      description: Create a new user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                  example: Test User Biasa
+                placeBirth:
+                  type: string
+                  example: Jakarta
+                dateBirth:
+                  type: string
+                  example: '1994-05-15'
+                gender:
+                  type: string
+                  example: '1'
+                email:
+                  type: string
+                  example: testuser@email.com
+                password:
+                  type: string
+                  example: Pass12345
+                status:
+                  type: string
+                  example: '1'
+            example:
+              fullName: Test User Biasa
+              placeBirth: Jakarta
+              dateBirth: '1994-05-15'
+              gender: '1'
+              email: testuser@email.com
+              password: Pass12345
+              status: '1'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User created successfully
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 5
+                      fullName:
+                        type: string
+                        example: Test User Biasa
+                      placeBirth:
+                        type: string
+                        example: Jakarta
+                      dateBirth:
+                        type: string
+                        example: '1994-05-15'
+                      gender:
+                        type: string
+                        example: '1'
+                      email:
+                        type: string
+                        example: testuser@email.com
+                      status:
+                        type: string
+                        example: '1'
+              example:
+                success: true
+                message: User created successfully
+                data:
+                  id: 5
+                  fullName: Test User Biasa
+                  placeBirth: Jakarta
+                  dateBirth: '1994-05-15'
+                  gender: '1'
+                  email: testuser@email.com
+                  status: '1'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+              example:
+                success: false
+                message: Invalid or expired access token
+        '409':
+          description: Conflict - Duplicate Data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+              example:
+                success: false
+                message: Email already exists
+        '422':
+          description: Unprocessable Entity - Validation Failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                success: false
+                message: Validation failed
+                error:
+                  - field: fullName
+                    message: Fullname is required
+                  - field: placeBirth
+                    message: Place of Birth is required
+                  - field: dateBirth
+                    message: Date of Birth is required
+                  - field: gender
+                    message: Gender is not valid
+                  - field: email
+                    message: Email is required
+                  - field: password
+                    message: Password is required
+                  - field: status
+                    message: Status is not valid
+
+  /api/users/update/{id}:
+    put:
+      tags:
+        - User
+      summary: Update user
+      description: Update an existing user by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 5
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                  example: Test User Biasa
+                placeBirth:
+                  type: string
+                  example: Jakarta
+                dateBirth:
+                  type: string
+                  example: '1994-05-15'
+                gender:
+                  type: string
+                  example: '1'
+                email:
+                  type: string
+                  example: testuser@email.com
+                status:
+                  type: string
+                  example: '0'
+            example:
+              fullName: Test User Biasa
+              placeBirth: Jakarta
+              dateBirth: '1994-05-15'
+              gender: '1'
+              email: testuser@email.com
+              status: '0'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User updated successfully
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 5
+                      fullName:
+                        type: string
+                        example: Test User Biasa
+                      placeBirth:
+                        type: string
+                        example: Jakarta
+                      dateBirth:
+                        type: string
+                        example: '1994-05-15'
+                      gender:
+                        type: string
+                        example: '1'
+                      email:
+                        type: string
+                        example: testuser@email.com
+                      status:
+                        type: string
+                        example: '0'
+                      updated_at:
+                        type: string
+                        example: '2026-09-15T13:40:57.162Z'
+              example:
+                success: true
+                message: User updated successfully
+                data:
+                  id: 5
+                  fullName: Test User Biasa
+                  placeBirth: Jakarta
+                  dateBirth: '1994-05-15'
+                  gender: '1'
+                  email: testuser@email.com
+                  status: '0'
+                  updated_at: '2026-09-15T13:40:57.162Z'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+              example:
+                success: false
+                message: Invalid or expired access token
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+              example:
+                success: false
+                message: User not found
+        '409':
+          description: Conflict - Duplicate Data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+              example:
+                success: false
+                message: Email already exists
+        '422':
+          description: Unprocessable Entity - Validation Failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                success: false
+                message: Validation failed
+                error:
+                  - field: email
+                    message: Email is required
+
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login
+      description: Authenticate user and get access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: superadmin@email.com
+                password:
+                  type: string
+                  example: Password123
+            example:
+              email: superadmin@email.com
+              password: Password123
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Login successfully
+                  data:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        example: Bearer
+                      accessToken:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      user:
+                        $ref: '#/components/schemas/UserObject'
+              example:
+                success: true
+                message: Login successfully
+                data:
+                  type: Bearer
+                  accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTc4OTQ3OTIyMCwiZXhwIjoxNzg5NDgwMTIwfQ.tJ0h9t8OpTmwoa1p1d1GgOHApkZj9X0cXQkw35jMOng
+                  user:
+                    id: 1
+                    fullName: Super Administrator
+                    placeBirth: Jakarta
+                    dateBirth: '1991-01-01'
+                    gender: true
+                    email: superadmin@email.com
+                    status: true
+        '401':
+          description: Unauthorized - Inactive account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Your account is inactive
+              example:
+                success: false
+                message: Your account is inactive
+        '422':
+          description: Unprocessable Entity - Validation Failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                success: false
+                message: Validation failed
+                error:
+                  - field: email
+                    message: Email is required
+                  - field: password
+                    message: Password is required
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh token
+      description: Refresh access token using refresh token cookie
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Token refreshed successfully
+                  data:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        example: Bearer
+                      accessToken:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      user:
+                        $ref: '#/components/schemas/UserObject'
+              example:
+                success: true
+                message: Token refreshed successfully
+                data:
+                  type: Bearer
+                  accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTc4OTQ4MDE2NCwiZXhwIjoxNzg5NDgxMDY0fQ.ntwQCnN7mXh2L31OCJbsxhK3iWCUm06yKpbFWXcdjeg
+                  user:
+                    id: 1
+                    fullName: Super Administrator
+                    placeBirth: Jakarta
+                    dateBirth: '1991-01-01'
+                    gender: true
+                    email: superadmin@email.com
+                    status: true
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Refresh token not found
+              example:
+                success: false
+                message: Refresh token not found
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout
+      description: Logout user and clear refresh token cookie
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Logout successfully
+              example:
+                success: true
+                message: Logout successfully
+
+  /api/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: My profile
+      description: Get profile of the currently authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Profile retrieved successfully
+                  data:
+                    $ref: '#/components/schemas/UserObject'
+              example:
+                success: true
+                message: Profile retrieved successfully
+                data:
+                  id: 1
+                  fullName: Super Administrator
+                  placeBirth: Jakarta
+                  dateBirth: '1991-01-01'
+                  gender: true
+                  email: superadmin@email.com
+                  status: true
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+              example:
+                success: false
+                message: Invalid or expired access token
+
+    put:
+      tags:
+        - Auth
+      summary: Update my profile
+      description: Update profile of the currently authenticated user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                  example: Super Administrator
+                placeBirth:
+                  type: string
+                  example: Jakarta
+                dateBirth:
+                  type: string
+                  example: '1991-02-01'
+                gender:
+                  type: string
+                  example: '0'
+            example:
+              fullName: Super Administrator
+              placeBirth: Jakarta
+              dateBirth: '1991-02-01'
+              gender: '0'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Profile updated successfully
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      fullName:
+                        type: string
+                        example: Super Administrator
+                      placeBirth:
+                        type: string
+                        example: Jakarta
+                      dateBirth:
+                        type: string
+                        example: '1991-02-01'
+                      gender:
+                        type: string
+                        example: '0'
+                      email:
+                        type: string
+                        example: superadmin@email.com
+                      status:
+                        type: boolean
+                        example: true
+                      updated_at:
+                        type: string
+                        example: '2026-09-15T13:50:26.871Z'
+              example:
+                success: true
+                message: Profile updated successfully
+                data:
+                  id: 1
+                  fullName: Super Administrator
+                  placeBirth: Jakarta
+                  dateBirth: '1991-02-01'
+                  gender: '0'
+                  email: superadmin@email.com
+                  status: true
+                  updated_at: '2026-09-15T13:50:26.871Z'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+              example:
+                success: false
+                message: Invalid or expired access token
+        '422':
+          description: Unprocessable Entity - Validation Failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                success: false
+                message: Validation failed
+                error:
+                  - field: dateBirth
+                    message: Date of Birth is required
+                  - field: gender
+                    message: Gender is not valid
+
+  /api/auth/change-password:
+    put:
+      tags:
+        - Auth
+      summary: Change password
+      description: Change password of the currently authenticated user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPassword:
+                  type: string
+                  example: Pass12345
+                newPassword:
+                  type: string
+                  example: Password123
+                confirmNewPassword:
+                  type: string
+                  example: Password123
+            example:
+              currentPassword: Pass12345
+              newPassword: Password123
+              confirmNewPassword: Password123
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Password changed successfully. Please login again
+              example:
+                success: true
+                message: Password changed successfully. Please login again
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+              example:
+                success: false
+                message: Invalid or expired access token
+        '422':
+          description: Unprocessable Entity - Validation Failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                success: false
+                message: Validation failed
+                error:
+                  - field: currentPassword
+                    message: Current Password is required
+                  - field: newPassword
+                    message: New Password is required
