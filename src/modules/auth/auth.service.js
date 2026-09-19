@@ -18,7 +18,7 @@ const { extractDeviceInfo } = require('../../utils/device');
 const login = async (payload, req) => {
   const data = await validate(loginSchema, payload);
   const user = await User.findOne({
-    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status', 'password'],
+    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status', 'password', 'defaultPassword'],
     where: { email: lowerCase(data.email) },
   });
 
@@ -91,7 +91,7 @@ const refresh = async (req) => {
   }
 
   const user = await User.findByPk(tokenRecord.userId, {
-    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status'],
+    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status', 'defaultPassword'],
   });
 
   if (!user || !user.status) throw new UnauthorizedError('User is not valid');
@@ -144,7 +144,7 @@ const logout = async (req) => {
 
 const getProfile = async (userId) => {
   const user = await User.findByPk(userId, {
-    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status'],
+    attributes: ['id', 'fullName', 'placeBirth', 'dateBirth', 'gender', 'email', 'status', 'defaultPassword'],
   });
 
   if (!user) throw new NotFoundError('User not found');
